@@ -67,25 +67,30 @@ class Jobs extends Component {
   }
 
   getJobs = async () => {
-    this.setState({
-      apiStatus: apiStatusConstants.inProgress,
-    })
+    this.setState({apiStatus: apiStatusConstants.inProgress})
+
     const {employeeType, minimumSalary, searchInput} = this.state
-    const apiUrl = `https://apis.ccbp.in/jobs?employment_type=${employeeType.join()}&minimum_package=${minimumSalary}&search=${searchInput}`
+
     const jwtToken = Cookies.get('jwt_token')
 
+    const apiUrl = `https://apis.ccbp.in/jobs?employment_type=${employeeType.join(
+      ',',
+    )}&minimum_package=${minimumSalary}&search=${searchInput}`
+
     const options = {
+      method: 'GET',
       headers: {
         Authorization: `Bearer ${jwtToken}`,
       },
-      method: 'GET',
     }
+
     const response = await fetch(apiUrl, options)
+    const data = await response.json()
+
     if (response.ok === true) {
-      const data = await response.json()
       const updatedJobsData = data.jobs.map(eachJob => ({
         companyLogoUrl: eachJob.company_logo_url,
-        employmentType: eachJob.employeeType,
+        employmentType: eachJob.employment_type,
         id: eachJob.id,
         jobDescription: eachJob.job_description,
         location: eachJob.location,
@@ -93,16 +98,53 @@ class Jobs extends Component {
         rating: eachJob.rating,
         title: eachJob.title,
       }))
+
       this.setState({
         jobsList: updatedJobsData,
         apiStatus: apiStatusConstants.success,
       })
     } else {
-      this.setState({
-        apiStatus: apiStatusConstants.failure,
-      })
+      this.setState({apiStatus: apiStatusConstants.failure})
     }
   }
+
+  //   getJobs = async () => {
+  //     this.setState({
+  //       apiStatus: apiStatusConstants.inProgress,
+  //     })
+  //     const {employeeType, minimumSalary, searchInput} = this.state
+  //     const apiUrl = `https://apis.ccbp.in/jobs?employment_type=${employeeType.join()}&minimum_package=${minimumSalary}&search=${searchInput}`
+  //     const jwtToken = Cookies.get('jwt_token')
+
+  //     const options = {
+  //       headers: {
+  //         Authorization: `Bearer ${jwtToken}`,
+  //       },
+  //       method: 'GET',
+  //     }
+  //     const response = await fetch(apiUrl, options)
+  //     if (response.ok === true) {
+  //       const data = await response.json()
+  //       const updatedJobsData = data.jobs.map(eachJob => ({
+  //         companyLogoUrl: eachJob.company_logo_url,
+  //         employmentType: eachJob.employment_type,
+  //         id: eachJob.id,
+  //         jobDescription: eachJob.job_description,
+  //         location: eachJob.location,
+  //         packagePerAnnum: eachJob.package_per_annum,
+  //         rating: eachJob.rating,
+  //         title: eachJob.title,
+  //       }))
+  //       this.setState({
+  //         jobsList: updatedJobsData,
+  //         apiStatus: apiStatusConstants.success,
+  //       })
+  //     } else {
+  //       this.setState({
+  //         apiStatus: apiStatusConstants.failure,
+  //       })
+  //     }
+  //   }
 
   renderJobsList = () => {
     const {jobsList} = this.state
@@ -189,11 +231,25 @@ class Jobs extends Component {
   }
 
   changeEmployeeList = type => {
-    this.setState(
-      prev => ({employeeType: [...prev.employeeType, type]}),
-      this.getJobs,
-    )
+    this.setState(prevState => {
+      const {employeeType} = prevState
+      const updatedEmployeeType = employeeType.includes(type)
+        ? employeeType.filter(item => item !== type)
+        : [...employeeType, type]
+
+      return {employeeType: updatedEmployeeType}
+    }, this.getJobs)
   }
+
+  //   changeEmployeeList = type => {
+  //     this.setState(prev => {
+  //       const {employeeType} = prev
+  //       if (employeeType.includes(type)) {
+  //         return {employeeType: employeeType.filter(each => each !== type)}
+  //       }
+  //       return {employeeType: [...employeeType, type]}
+  //     }, this.getJobs)
+  //   }
 
   render() {
     const {searchInput} = this.state
@@ -206,6 +262,7 @@ class Jobs extends Component {
               employmentTypesList={employmentTypesList}
               salaryRangesList={salaryRangesList}
               changeSalaryInput={this.changeSearchInput}
+              changeSearchInput={this.changeSearchInput}
               searchInput={searchInput}
               getJobs={this.getJobs}
               changeSalary={this.changeSalary}
@@ -217,6 +274,7 @@ class Jobs extends Component {
                   type="search"
                   className="search-top-desktop"
                   placeholder="Search"
+                  value={searchInput}
                   onChange={this.changeSearchInput}
                   onKeyDown={this.onEnterSearchInput}
                 />
@@ -239,3 +297,4 @@ class Jobs extends Component {
 }
 
 export default Jobs
+
